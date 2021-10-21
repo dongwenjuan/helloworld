@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: docker
+spec:
+  params:
+  - name: image
+    value: harbor.oz/test/helloworld
+  - name: insecure_registry
+    value: harbor.oz
+  taskRef:
+    name: docker-build
+  workspaces:
+  - name: source
+    emptyDir: {}

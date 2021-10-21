@@ -32,9 +32,19 @@ spec:
   - name: image
     type: string
     description: The image name which will build
+  - name: image_tag
+    type: string
   - name: insecure_registry
     type: string
     description: The image registry
+  - name: subdirectory
+    type: string
+    default: ""
+  - name: revision
+    type: string
+    default: "master"
+  - name: refspec
+    type: string
   workspaces:
   - name: shared-data
     description: |
@@ -52,34 +62,35 @@ spec:
       value: $(params.repo-url)
     - name: revision
       value: $(params.commit)
+    - name: refspec
+      value: $(params.refspec)
     - name: userHome
       value: $(params.user-home)
     - name: deleteExisting
-      value: "false"
+      value: "true"
     - name: subdirectory
-      value: $(params.source-revision) 
+      value: $(params.commit)
   - name: run-test
     taskRef:
       name: golang-test
     runAfter:
-      - check-expectations
+      - fetch-repo
     workspaces:
       - name: source
         workspace: shared-data
-    params:
-      - name: package
-        value:       github.com/chmouel/go-rest-api-test
   - name: image-build-and-push
     taskRef:
       name: docker-build
     runAfter:
-    - run-test
+      - run-test
     workspaces:
     - name: source
       workspace: shared-data
     params:
     - name: image
       value: $(params.image)
+    - name: image_tag
+      value: $(params.image_tag)
     - name: insecure_registry
       value: $(params.insecure_registry)
   - name: fetch-deployment-repository
@@ -90,12 +101,31 @@ spec:
       workspace: shared-data
     params:
     - name: url
-      value: $(params.deployment-repo-url)
+      value: http://opnfv.zte.com.cn/gerrit/openzero/sample-project
     - name: revision
-      value: $(params.deployment-revision)
+      value: master
     - name: subdirectory
-      value: $(params.source-revision)-deployment
+      value: $(params.revision)
     - name: deleteExisting
       value: "true"
     runAfter:
       - image-build-and-push
+  - name: push-manifests
+    taskRef:
+      name: push-manifests
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: deployment-subdirectory
+      value: helloworld
+    - name: source-commit-id
+      value: master
+    - name: image
+      value: $(params.image)
+    - name: application
+      value: helloworld
+    - name: image_tag
+      value: $(params.image_tag)
+    runAfter:
+      - fetch-deployment-repository

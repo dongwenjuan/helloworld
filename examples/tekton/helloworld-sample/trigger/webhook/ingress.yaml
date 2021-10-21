@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: el-gerrit-listener-interceptor
+spec:
+  rules:
+  - host: el-github-listener-interceptor.default.svc.cluster.local:8080
+    http:
+      paths:
+      - backend:
+          serviceName: el-gerrit-listener-interceptor
+          servicePort: 8080

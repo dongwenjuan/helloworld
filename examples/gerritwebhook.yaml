@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gerritwebhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gerritwebhook
+  template:
+    metadata:
+      labels:
+        app: gerritwebhook
+    spec:
+      containers:
+      - name: gerritwebhook
+        image: harbor.oz/test/gerritwebhook
+        ports:
+        - name: http
+          containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gerritwebhook-service
+  labels:
+    app: gerritwebhook
+spec:
+  selector:
+    app: gerritwebhook
+  ports:
+  # Define metrics and profiling for them to be accessible within service meshes.
+  - name: http
+    port: 80
+    targetPort: 80
+  type: ClusterIP

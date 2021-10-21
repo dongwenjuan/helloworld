@@ -1,0 +1,60 @@
+ apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: push-manifests
+spec:
+  description: >-
+    This task will push all required manifests to run a Knative Service, initializing them
+    if they dont exists or updating them if new version is created.
+    There will basically manage 3 kinds of environments:
+    - development: manifests will be pushed and existing kustomization.yaml will be updated
+    - staging and production: manifests will be pushed but kustomization.yaml will not be updated. It will only
+    create a new kustomization-$revision.yaml to be considered for manual revision and update.
+  workspaces:
+    - name: source
+      description: The source workspace where both source code and deployment repo have been checkout
+  params:
+    - name: application
+      description: application name
+      type: string
+    - name: source-commit-id
+      description: full source commit id
+      type: string
+    - name: deployment-subdirectory
+      description: subdirectory within source workspace where deployment repository has been checkout
+      type: string
+    - name: image
+      description: image name
+      type: string
+    - name: image_tag
+      type: string 
+  steps:
+    - name: push-manifest-to-git
+      image: quay.io/dsanchor/ubi8-git:0.0.2
+      script: |
+        #!/bin/sh
+        set -eu -o pipefail
+
+        ROOT_DIR="$(workspaces.source.path)/$(params.source-commit-id)"
+        DEPLOYMENT_DIR="$(workspaces.source.path)/$(params.source-commit-id)/$(params.deployment-subdirectory)"
+        cd $ROOT_DIR
+
+        cat <<EOF >$DEPLOYMENT_DIR/development/kustomization.yaml
+        bases:
+        - ../base
+
+        namePrefix: dev-
+        images:
+        - name: harbor.oz/test/helloworld
+          newName: $(params.image)
+          newTag: $(params.image_tag)
+        EOF
+
+        cd $ROOT_DIR
+        git config --global user.email "dong.wenjuan@zte.com.cn"
+        git config --global user.name "00101742"
+
+        git add --a -v
+        git commit -m "New manifests for commit $(params.source-commit-id) of application $(params.application)"
+        git remote add gerrit ssh://00101742@opnfv.zte.com.cn:29418/openzero/sample-project
+        git push gerrit HEAD:master

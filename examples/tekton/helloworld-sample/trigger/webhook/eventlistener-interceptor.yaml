@@ -1,0 +1,106 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: listener-interceptor
+spec:
+  serviceAccountName: tekton-triggers-example-sa
+  triggers:
+    - name: gerritwebhook-trig
+      interceptors:
+        - webhook:
+            header:
+              - name: EventType
+                value: comment-added
+              - name: Project
+                value: openzero/testtest
+              - name: Branch
+                value: master
+            objectRef:
+              kind: Service
+              name: gerritwebhook-service
+              apiVersion: v1
+              namespace: default
+      bindings:
+        - ref: gerrit-pr-binding
+      template:
+        ref: gerrit-template
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: tekton-triggers-gerrit-sa
+            containers:
+              - resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: gerrit-pr-binding
+spec:
+  params:
+    - name: project
+      value: $(body.project)
+    - name: revision
+      value: $(body.patchSet.revision)
+    - name: ref
+      value: $(body.patchSet.ref)
+    - name: eventCreatedOn
+      value: $(body.eventCreatedOn)
+
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: gerrit-template
+spec:
+  params:
+    - name: project
+    - name: revision
+    - name: ref
+    - name: eventCreatedOn
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: git-clone-checking-out-a-commit-
+      spec:
+        serviceAccountName: sshkey
+        pipelineRef:
+          name: github-push-pipeline
+        workspaces:
+        - name: shared-data
+          persistentvolumeclaim:
+            claimName: shared-task-storage
+        taskRunSpecs:
+        - pipelineTaskName: fetch-repo
+          taskPodTemplate:
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 65532 # nonroot user in git-init container
+        params:
+        - name: repo-url
+          value: http://opnfv.zte.com.cn/gerrit/$(tt.params.project)
+        - name: commit
+          value: $(tt.params.revision)
+        - name: refspec
+          value: $(tt.params.ref)
+        - name: revision
+          value: $(tt.params.revision)
+        - name: user-home
+          value: "/home/nonroot"
+        - name: user-uid
+          value: "65532"
+        - name: image
+          value: harbor.oz/$(tt.params.project)
+        - name: image_tag
+          value: $(tt.params.eventCreatedOn)
+        - name: insecure_registry
+          value: harbor.oz

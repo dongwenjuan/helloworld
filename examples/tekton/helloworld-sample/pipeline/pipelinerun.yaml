@@ -1,10 +1,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: git-clone-checking-out-a-commit
+  generateName: git-clone-checking-out-a-commit-
 spec:
+  serviceAccountName: sshkey
   pipelineRef:
-    name: checking-out-a-revision
+    name: github-push-pipeline
   workspaces:
   - name: shared-data
     persistentvolumeclaim:
@@ -19,12 +20,14 @@ spec:
   - name: repo-url
     value: https://github.com/dongwenjuan/helloworld
   - name: commit
-    value: ba5f4379d78b0dbf4f58b0aec7af9bb7f645fa2e
+    value: 4e608a57e8a65678590ae9e475d103a4e24655ee
   - name: user-home
     value: "/home/nonroot"
   - name: user-uid
     value: "65532"
   - name: image
     value: harbor.oz/test/helloworld
+  - name: image_tag
+    value: v2
   - name: insecure_registry
     value: harbor.oz
