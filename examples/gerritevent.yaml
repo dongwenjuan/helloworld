@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gerritevent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gerritevent
+  template:
+    metadata:
+      labels:
+        app: gerritevent
+    spec:
+      containers:
+      - name: gerritevent
+        image: harbor.oz/test/gerritevent
+        command: ["/bin/gerrit_event"]
+        args: [
+          "--gerrit-url=gerrit.oz:29418",
+          "--gerrit-user=00101742",
+          "--gerrit-user-publickey=/tmp/id_rsa",
+          "--webhook-url=http://el-gerrit-listener-interceptor.svc.default.cluster.local:8080"
+        ]

@@ -45,6 +45,7 @@ spec:
     default: "master"
   - name: refspec
     type: string
+    default: ""
   workspaces:
   - name: shared-data
     description: |
@@ -70,19 +71,20 @@ spec:
       value: "true"
     - name: subdirectory
       value: $(params.commit)
-  - name: run-test
-    taskRef:
-      name: golang-test
-    runAfter:
-      - fetch-repo
-    workspaces:
-      - name: source
-        workspace: shared-data
+#  - name: run-test
+#    taskRef:
+#      name: golang-test
+#    runAfter:
+#      - fetch-repo
+#    workspaces:
+#      - name: source
+#        workspace: shared-data
   - name: image-build-and-push
     taskRef:
       name: docker-build
     runAfter:
-      - run-test
+            #- run-test
+      - fetch-repo
     workspaces:
     - name: source
       workspace: shared-data
@@ -93,6 +95,8 @@ spec:
       value: $(params.image_tag)
     - name: insecure_registry
       value: $(params.insecure_registry)
+    - name: subpath
+      value: $(params.commit)
   - name: fetch-deployment-repository
     taskRef:
       name: git-clone
@@ -105,7 +109,7 @@ spec:
     - name: revision
       value: master
     - name: subdirectory
-      value: $(params.revision)
+      value: master
     - name: deleteExisting
       value: "true"
     runAfter:

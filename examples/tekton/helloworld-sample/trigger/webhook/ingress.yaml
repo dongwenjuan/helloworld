@@ -4,7 +4,7 @@ metadata:
   name: el-gerrit-listener-interceptor
 spec:
   rules:
-  - host: el-github-listener-interceptor.default.svc.cluster.local:8080
+  - host: gerritlistener.oz
     http:
       paths:
       - backend:

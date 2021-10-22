@@ -47,7 +47,7 @@ spec:
         images:
         - name: harbor.oz/test/helloworld
           newName: $(params.image)
-          newTag: $(params.image_tag)
+          newTag: "$(params.image_tag)"
         EOF
 
         cd $ROOT_DIR

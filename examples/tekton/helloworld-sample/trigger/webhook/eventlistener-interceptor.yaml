@@ -1,5 +1,5 @@
 ---
-apiVersion: triggers.tekton.dev/v1beta1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
   name: listener-interceptor
@@ -10,9 +10,9 @@ spec:
       interceptors:
         - webhook:
             header:
-              - name: EventType
+              - name: Event-Type
                 value: comment-added
-              - name: Project
+              - name: Project-Name
                 value: openzero/testtest
               - name: Branch
                 value: master
@@ -30,7 +30,7 @@ spec:
       spec:
         template:
           spec:
-            serviceAccountName: tekton-triggers-gerrit-sa
+            serviceAccountName: tekton-triggers-example-sa
             containers:
               - resources:
                   requests:
